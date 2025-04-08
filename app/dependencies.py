@@ -3,7 +3,7 @@ Contains dependencies shared accross the projects.
 """
 
 from typing import Annotated
-
+from sqlalchemy.orm import Session
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 
@@ -17,7 +17,23 @@ from .models.user import fake_users_db
 from .core.security import verify_password
 from .core.jwt_token import SECRET_KEY, ALGORITHM
 
+# from .db.database import SessionLocal
+from .db.database import engine
+
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/v1/users/login")
+
+
+# async def get_db():
+#     db = SessionLocal()
+#     try:
+#         yield db
+#     finally:
+#         db.close()
+
+
+async def get_session_db():
+    with Session(engine) as session:
+        yield session
 
 
 def get_user(db, email: str):

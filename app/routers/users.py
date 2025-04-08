@@ -1,6 +1,7 @@
 from typing import Annotated
 from datetime import timedelta
 
+from sqlalchemy.orm import Session
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 
@@ -10,8 +11,11 @@ from ..models.user import fake_users_db
 from ..schemas.token import Token
 from ..core.jwt_token import create_access_token
 from ..core.constants import ACCESS_TOKEN_EXPIRE_MINUTES
+from ..dependencies import get_session_db
 
 router = APIRouter(prefix="/api/v1/users", tags=["users"])
+
+SessionDep = Annotated[Session, Depends(get_session_db)]
 
 
 def fake_hash_password(password: str):
