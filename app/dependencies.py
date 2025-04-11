@@ -4,6 +4,8 @@ Contains dependencies shared accross the projects.
 
 from typing import Annotated
 from sqlalchemy.orm import Session
+
+
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 
@@ -11,11 +13,11 @@ import jwt
 from jwt.exceptions import InvalidTokenError
 
 # from .routers.users import oauth2_scheme
-from .schemas.users import User, UserInDB
+from .schemas.users import UserInDBSchema
 from .schemas.token import TokenData
-from .models.user import fake_users_db
 from .core.security import verify_password
 from .core.jwt_token import SECRET_KEY, ALGORITHM
+from .models.user import User
 
 # from .db.database import SessionLocal
 from .db.database import engine
@@ -23,26 +25,34 @@ from .db.database import engine
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/v1/users/login")
 
 
-# async def get_db():
-#     db = SessionLocal()
-#     try:
-#         yield db
-#     finally:
-#         db.close()
-
-
 async def get_session_db():
     with Session(engine) as session:
         yield session
 
 
-def get_user(db, email: str):
+def get_user(session, email: str):
     """
     Get user from database
     """
-    if email in db:
-        user_dict = db[email]
-        return UserInDB(**user_dict)
+    # if email in db:
+    #     user_dict = db[email]
+    #     return UserInDB(**user_dict)
+
+    # user = session.execute(select(User).filter_by(email=email)).first()
+    user = (
+        session.query(
+            # User.first_name,
+            # User.last_name,
+            User.username,
+            User.email,
+            User.hashed_password,
+            User.is_active,
+        )
+        .filter_by(email=email)
+        .first()
+    )
+    user = user._asdict()
+    return UserInDBSchema(**user)
 
 
 def decode_token(token: str) -> User:
@@ -53,11 +63,11 @@ def decode_token(token: str) -> User:
     return user
 
 
-def authenticate_user(fake_db, email: str, password: str) -> UserInDB:
+def authenticate_user(session, email: str, password: str) -> UserInDBSchema:
     """
     Verify user password and return True if correct or False
     """
-    user = get_user(fake_db, email)
+    user = get_user(session, email)
     if not user:
         return False
     if not verify_password(password, user.hashed_password):
@@ -65,7 +75,10 @@ def authenticate_user(fake_db, email: str, password: str) -> UserInDB:
     return user
 
 
-async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]) -> User:
+async def get_current_user(
+    token: Annotated[str, Depends(oauth2_scheme)],
+    session: Annotated[Session, Depends(get_session_db)],
+) -> User:
     """
     Get currently logged in user
     """
@@ -75,7 +88,6 @@ async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]) -> Use
         headers={"WWW-Authenticate": "Bearer"},
     )
 
-    # user = decode_token(token)
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         email = payload.get("sub")
@@ -84,7 +96,7 @@ async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]) -> Use
         token_data = TokenData(email=email)
     except InvalidTokenError:
         raise credentials_exception
-    user = get_user(fake_users_db, email=token_data.email)
+    user = get_user(session, email=token_data.email)
     if user is None:
         raise credentials_exception
     return user

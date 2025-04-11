@@ -5,6 +5,6 @@ from sqlalchemy.orm import sessionmaker
 POSTGRES_DATABASE_UL: str = "postgresql://postgres:skyrim@localhost/tbc"
 
 
-engine = create_engine(POSTGRES_DATABASE_UL, echo=True)
+engine = create_engine(POSTGRES_DATABASE_UL, echo=False)
 
 # SessionLocal = sessionmaker(autoflush=False, bind=engine)

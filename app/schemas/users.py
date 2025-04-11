@@ -1,20 +1,37 @@
 from pydantic import BaseModel
 
 
-class User(BaseModel):
+class UserSchema(BaseModel):
     """
-    Model the user entity
+    Schema to model the user entity
     """
 
-    first_name: str
-    last_name: str
+    # first_name: str
+    # last_name: str
+    username: str
     email: str
     is_active: bool
 
 
-class UserInDB(User):
+class UserInDBSchema(UserSchema):
     """
-    Serializer and deserialize user
+    Schema to serializer and deserialize user
     """
 
     hashed_password: str
+
+    class Config:
+        from_attributes: bool = True
+
+
+class UserCreateSchema(BaseModel):
+    """
+    Schema to create user
+    """
+
+    # first_name: str
+    # last_name: str
+    username: str
+    email: str
+    password: str
+    password2: str

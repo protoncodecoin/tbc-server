@@ -10,7 +10,7 @@ class Token(BaseModel):
     token_type: str
 
 
-class TokenData(Token):
+class TokenData(BaseModel):
     """
     Validate token data to be sent to client
     """
