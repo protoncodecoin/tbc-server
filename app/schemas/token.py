@@ -1,4 +1,5 @@
 from pydantic import BaseModel
+from .users import UserResponseSchema
 
 
 class Token(BaseModel):
@@ -8,6 +9,9 @@ class Token(BaseModel):
 
     access_token: str
     token_type: str
+    id: int
+    email: str
+    username: str
 
 
 class TokenData(BaseModel):

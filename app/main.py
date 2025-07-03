@@ -1,27 +1,82 @@
-from fastapi import FastAPI
-from .models.user import Base
-from .routers import users
-from .db.database import engine
+import os
+from fastapi import FastAPI, Request
+from contextlib import asynccontextmanager
 
-app = FastAPI()
+from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
+
+
+from .models.user import Base
+from .routers import user, podcast, sermon
+from .db.database import engine
+from .utils.handler_exceptions import (
+    PodcastNotFoundException,
+    UnauthoriziedUserException,
+    PartialUpdateException,
+)
+from .core.constants import MEDIA_DIR
 
 
 def create_db_tables():
     """
     Create tables if not created
     """
-    Base.metadata.create_all(engine)
+    Base.metadata.create_all(bind=engine)
 
 
-@app.on_event("startup")
-def on_startup():
+@asynccontextmanager
+async def lifespan(app: FastAPI):
     """
-    On application startup
+    Create tables if not created
     """
-    create_db_tables()
+    # create_db_tables()
+    yield
 
 
-app.include_router(router=users.router)
+app = FastAPI()
+
+
+os.makedirs(MEDIA_DIR, exist_ok=True)
+
+app.mount("/static", StaticFiles(directory="static"), name="static")
+
+
+app.include_router(router=user.router)
+app.include_router(router=podcast.router)
+app.include_router(router=sermon.router)
+
+
+@app.exception_handler(PodcastNotFoundException)
+def podcast404_exception_handler(req: Request, ex: PodcastNotFoundException):
+    """
+    Exception handler for missing podcast resources.
+    """
+    return JSONResponse(
+        status_code=ex.status_code,
+        content={
+            "message": f"error: {ex.detail}",
+        },
+    )
+
+
+@app.exception_handler(UnauthoriziedUserException)
+def unauthorizied_exception_handler(req: Request, ex: UnauthoriziedUserException):
+    """
+    Exception handler for unauthorizied access to podcast resources.
+    """
+    return JSONResponse(
+        status_code=ex.status_code, content={"message": f"error: {ex.detail}"}
+    )
+
+
+@app.exception_handler(PartialUpdateException)
+def partial_update_exception_handler(req: Request, ex: PartialUpdateException):
+    """
+    Exception handler that is raised when no data is included in the patch operation.
+    """
+    return JSONResponse(
+        status_code=ex.status_code, content={"message": f"error: {ex.detail}"}
+    )
 
 
 @app.get("/api/v1/")

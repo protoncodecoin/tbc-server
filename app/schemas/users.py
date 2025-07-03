@@ -1,19 +1,22 @@
-from pydantic import BaseModel
+from datetime import datetime
+from typing import Annotated
+from pydantic import BaseModel, Field, EmailStr
 
 
-class UserSchema(BaseModel):
+class UserResponseSchema(BaseModel):
     """
-    Schema to model the user entity
+    Schema to return the user entity
     """
 
-    # first_name: str
-    # last_name: str
+    id: int
     username: str
     email: str
     is_active: bool
+    # created_at: datetime
+    # updatedAt: datetime
 
 
-class UserInDBSchema(UserSchema):
+class UserInDBSchema(UserResponseSchema):
     """
     Schema to serializer and deserialize user
     """
@@ -32,6 +35,6 @@ class UserCreateSchema(BaseModel):
     # first_name: str
     # last_name: str
     username: str
-    email: str
-    password: str
-    password2: str
+    email: EmailStr = Field(...)
+    password: Annotated[str, Field(repr=False, min_length=8)]
+    password2: str = Field(repr=False, min_length=8)

@@ -12,14 +12,12 @@ from fastapi.security import OAuth2PasswordBearer
 import jwt
 from jwt.exceptions import InvalidTokenError
 
-# from .routers.users import oauth2_scheme
 from .schemas.users import UserInDBSchema
 from .schemas.token import TokenData
 from .core.security import verify_password
-from .core.jwt_token import SECRET_KEY, ALGORITHM
+from .core.jwt_token import decode_access_token
 from .models.user import User
 
-# from .db.database import SessionLocal
 from .db.database import engine
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/v1/users/login")
@@ -34,15 +32,10 @@ def get_user(session, email: str):
     """
     Get user from database
     """
-    # if email in db:
-    #     user_dict = db[email]
-    #     return UserInDB(**user_dict)
 
-    # user = session.execute(select(User).filter_by(email=email)).first()
     user = (
         session.query(
-            # User.first_name,
-            # User.last_name,
+            User.id,
             User.username,
             User.email,
             User.hashed_password,
@@ -51,19 +44,13 @@ def get_user(session, email: str):
         .filter_by(email=email)
         .first()
     )
+    if user is None:
+        return False
     user = user._asdict()
     return UserInDBSchema(**user)
 
 
-def decode_token(token: str) -> User:
-    """
-    Validates token and get user from db
-    """
-    user = get_user(fake_users_db, token)
-    return user
-
-
-def authenticate_user(session, email: str, password: str) -> UserInDBSchema:
+def authenticate_user(session, email: str, password: str) -> UserInDBSchema | bool:
     """
     Verify user password and return True if correct or False
     """
@@ -88,14 +75,7 @@ async def get_current_user(
         headers={"WWW-Authenticate": "Bearer"},
     )
 
-    try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        email = payload.get("sub")
-        if email is None:
-            raise credentials_exception
-        token_data = TokenData(email=email)
-    except InvalidTokenError:
-        raise credentials_exception
+    token_data = decode_access_token(token)
     user = get_user(session, email=token_data.email)
     if user is None:
         raise credentials_exception
