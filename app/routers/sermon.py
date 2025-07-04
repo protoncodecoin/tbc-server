@@ -20,7 +20,7 @@ router = APIRouter(prefix="/api/v1/sermon", tags=["sermon"])
 async def get_sermons(
     handler: Annotated[SermonService, Depends(get_sermon_service)],
     limit: Optional[int] = 5,
-    offset: Optional[int] = 1,
+    offset: Optional[int] = 0,
 ):
     """
     Get all sermons.
@@ -115,7 +115,9 @@ def stream_sermon(id: int, current_user: Annotated[User, Depends(get_current_use
 
 @router.delete("/")
 async def delete_sermon(
-    id: int, current_user: Annotated[User, Depends(get_current_user)]
+    id: int,
+    current_user: Annotated[User, Depends(get_current_user)],
+    handler: Annotated[SermonService, Depends(get_sermon_service)],
 ):
     """
     Delete a sermon from the database.
