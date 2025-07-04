@@ -36,3 +36,11 @@ class SermonRepository:
 
         query = self.sess.query(Sermon).limit(limit).offset(offset).all()
         return query
+
+    def delete_sermon(self, id: int) -> bool:
+        """
+        Delete sermon with the given Id
+        """
+
+        self.sess.query(Sermon).delete(id)
+        return True

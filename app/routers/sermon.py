@@ -18,7 +18,7 @@ router = APIRouter(prefix="/api/v1/sermon", tags=["sermon"])
 async def get_sermons(
     handler: Annotated[SermonService, Depends(get_sermon_service)],
     limit: Optional[int] = 5,
-    offset: Optional[int] = 1,
+    offset: Optional[int] = 0,
 ):
     """
     Get all sermons.
@@ -47,6 +47,7 @@ async def create_sermon(
     # updated_sermon.user_id = current_user.id
     cover_path = save_file(file=cover, subdir=SupportedMediaTypePath.IMAGE.name)
     audio_path = save_file(file=audio_file, subdir=SupportedMediaTypePath.AUDIO.name)
+
     if cover_path is None or audio_path is None:
         raise HTTPException(
             detail="cover or audio can't be empty",
@@ -86,7 +87,9 @@ def stream_sermon(id: int, current_user: Annotated[User, Depends(get_current_use
 
 @router.delete("/")
 async def delete_sermon(
-    id: int, current_user: Annotated[User, Depends(get_current_user)]
+    id: int,
+    current_user: Annotated[User, Depends(get_current_user)],
+    handler: Annotated[SermonService, Depends(get_sermon_service)],
 ):
     """
     Delete a sermon from the database.

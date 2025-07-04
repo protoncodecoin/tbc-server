@@ -33,3 +33,9 @@ class SermonService:
         Returns a list of sermon objects.
         """
         return self.repo.query_sermons(limit=limit, offset=offset)
+
+    def delete_sermon(self, id: int) -> bool:
+        """
+        Delete sermon with the given Id
+        """
+        return self.repo.delete_sermon(id)
