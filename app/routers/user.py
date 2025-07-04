@@ -14,8 +14,6 @@ from ..dependencies import get_current_user, authenticate_user
 from ..schemas.users import UserResponseSchema, UserCreateSchema
 from ..models.user import User
 from ..schemas.token import Token
-from ..core.jwt_token import create_access_token
-from ..core.constants import ACCESS_TOKEN_EXPIRE_MINUTES
 from ..dependencies import get_session_db
 
 from ..services.factory import get_user_service

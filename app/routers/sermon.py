@@ -2,14 +2,16 @@ from typing import Annotated, Optional
 
 from fastapi import APIRouter, Depends, status, HTTPException, UploadFile, Form, File
 
+from datetime import datetime
 
 from ..dependencies import get_current_user
 from ..services.factory import get_sermon_service
 from ..services.sermon_service import SermonService
-from ..schemas.sermon import CreateSermon, ResponseSermon
+from ..schemas.sermon import CreateSermon
 from ..models.user import User
-from ..utils.media_files_handler import save_file
+from ..utils.media_files_handler import validate_file
 from ..core.constants import SupportedMediaTypePath
+from cld_media.media_api import cloudinaryHandler
 
 router = APIRouter(prefix="/api/v1/sermon", tags=["sermon"])
 
@@ -44,23 +46,50 @@ async def create_sermon(
     Create new sermon.
     """
 
-    # updated_sermon.user_id = current_user.id
-    cover_path = save_file(file=cover, subdir=SupportedMediaTypePath.IMAGE.name)
-    audio_path = save_file(file=audio_file, subdir=SupportedMediaTypePath.AUDIO.name)
-    if cover_path is None or audio_path is None:
+    # # updated_sermon.user_id = current_user.id
+    is_valid_image = validate_file(
+        file=cover, media_type=SupportedMediaTypePath.IMAGE.name
+    )
+    is_valid_audio = validate_file(
+        file=audio_file, media_type=SupportedMediaTypePath.AUDIO.name
+    )
+
+    if not is_valid_image or not is_valid_audio:
         raise HTTPException(
-            detail="cover or audio can't be empty",
+            detail="Please provide the valid image or audio file.",
             status_code=status.HTTP_400_BAD_REQUEST,
         )
+
+    today = datetime.today()
+    # upload image and audio to cloudinary
+    img_res = await cloudinaryHandler.upload_image(
+        file=cover.file,
+        image_name=cover.filename,  # type: ignore
+        folder_name=f"sermon/images/{today.year}",
+        public_id=None,
+    )
+
+    audio_res = await cloudinaryHandler.upload_audio(
+        file=audio_file.file,
+        audio_name=audio_file.filename,  # type: ignore
+        folder_name=f"sermon/audios/{today.year}",
+        public_id=None,
+    )
+
+    print(img_res)
+    print("\n")
+    print(audio_res)
+
     try:
         new_sermon = CreateSermon(
             theme=theme,
             minister=minister,
             short_note=short_note,
-            cover_image=cover_path,
-            audio_file=audio_path,
+            cover_image=img_res["url"],
+            audio_file=audio_res["url"],
             user_id=current_user.id,
         )
+        print(cover.file, cover.filename)
     except ValueError as e:
 
         raise HTTPException(

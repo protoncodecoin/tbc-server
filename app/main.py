@@ -5,6 +5,8 @@ from contextlib import asynccontextmanager
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 
+import cloudinary
+from cloudinary.utils import cloudinary_url
 
 from .models.user import Base
 from .routers import user, podcast, sermon
@@ -13,6 +15,7 @@ from .utils.handler_exceptions import (
     PodcastNotFoundException,
     UnauthoriziedUserException,
     PartialUpdateException,
+    CloudinaryException,
 )
 from .core.constants import MEDIA_DIR
 
@@ -73,6 +76,16 @@ def unauthorizied_exception_handler(req: Request, ex: UnauthoriziedUserException
 def partial_update_exception_handler(req: Request, ex: PartialUpdateException):
     """
     Exception handler that is raised when no data is included in the patch operation.
+    """
+    return JSONResponse(
+        status_code=ex.status_code, content={"message": f"error: {ex.detail}"}
+    )
+
+
+@app.exception_handler(CloudinaryException)
+def media_upload_exception_handler(req: Request, ex: CloudinaryException):
+    """
+    Exception handler that is raise when media upload fails.
     """
     return JSONResponse(
         status_code=ex.status_code, content={"message": f"error: {ex.detail}"}

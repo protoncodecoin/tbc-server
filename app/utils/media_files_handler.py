@@ -42,3 +42,24 @@ def save_file(file: UploadFile, subdir: str) -> str | None:
             shutil.copyfileobj(file.file, buffer)
         return file_path
     return None
+
+
+def validate_file(file: UploadFile, media_type: str) -> bool:
+    """
+    Return file path to be saved in DB.
+    """
+    if file:
+        file_ext = file.filename.split(".")[-1]  # type: ignore
+
+        if media_type == SupportedMediaTypePath.AUDIO.name:
+            if file_ext in AUDIO_FILE_TYPES:
+                return True
+        if media_type == SupportedMediaTypePath.IMAGE.name:
+            if file_ext in IMAGE_FILE_TYPES:
+                return True
+        if media_type == SupportedMediaTypePath.VIDEO.name:
+            if file_ext in VIDEO_FILE_TYPES:
+                return True
+        return False
+
+    return False
