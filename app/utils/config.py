@@ -6,3 +6,4 @@ load_dotenv()
 
 # Access the env variable
 DATABASE_URL = os.getenv("DATABASE_URL")
+CLOUD_NAME = os.getenv("CLOUD_NAME")

@@ -19,6 +19,16 @@ from .utils.handler_exceptions import (
 )
 from .core.constants import MEDIA_DIR
 
+from .schemas.config import settings
+
+# Configuration
+cloudinary.config(
+    cloud_name=settings.CLOUD_NAME,
+    api_key=settings.API_KEY,
+    api_secret=settings.API_SECRET,  # Click 'View API Keys' above to copy your API secret
+    secure=True,
+)
+
 
 def create_db_tables():
     """
