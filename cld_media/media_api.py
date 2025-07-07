@@ -18,15 +18,11 @@ class MediaUtils(object):
         file: BinaryIO,
         image_name: str,
         folder_name: str,
-        public_id: str | None,
+        public_id: str,
     ) -> dict[str, Any]:
         """
         Upload image files to cloudinary
         """
-        if public_id is None:
-            # generate a public Id from the image name
-            public_id = image_name.split(".")[0]
-
         print("from api: ", public_id)
         response = cloudinary.uploader.upload(
             file,
@@ -44,14 +40,12 @@ class MediaUtils(object):
         self,
         file: BinaryIO,
         video_name: str,
-        public_id: str | None,
+        public_id: str,
         folder_name: str,
     ) -> dict[str, Any]:
         """
         Upload large video files to cloudinary
         """
-        if public_id is None:
-            public_id = video_name.split(".")[0]
 
         response: dict[str, Any] = cloudinary.uploader.upload_large(
             file,
@@ -70,14 +64,11 @@ class MediaUtils(object):
         file: BinaryIO,
         audio_name: str,
         folder_name: str,
-        public_id: str | None,
+        public_id: str,
     ) -> dict[str, Any]:
         """
         Upload audio files to cloudinary
         """
-        if public_id is None:
-            public_id = audio_name.split(".")[0]
-
         print("from api: ", public_id)
 
         try:
@@ -99,6 +90,25 @@ class MediaUtils(object):
             )
 
         return result
+
+    async def delete_media_file(self, public_id: str) -> bool:
+        """
+        Delete an uploaded media file.
+        """
+        try:
+            await cloudinary.uploader.destroy(public_id=public_id)
+        except Exception as e:
+            raise CloudinaryException(
+                status_code=400, detail="Failed to delete media file"
+            )
+        return True
+
+    def create_public_id(self, filename: str) -> str:
+        """
+        Generate a valid cloudinary public id to be used.
+        """
+        new_name = filename.strip(" ").replace(" ", "_").split(".")[0]
+        return new_name
 
 
 # singleton to be used across the project

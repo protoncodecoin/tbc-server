@@ -16,7 +16,9 @@ class Sermon(Base):
     minister: Mapped[str] = mapped_column(String(70))
     short_note: Mapped[str] = mapped_column(String(300))
     cover_image: Mapped[str] = mapped_column(String)
+    cld_image_public_id: Mapped[str] = mapped_column(String, default=None)
     audio_file: Mapped[str] = mapped_column(String)
+    cld_audio_public_id: Mapped[str] = mapped_column(String, default=None)
 
     user_id = mapped_column(ForeignKey("user_account.id"))
     uploaded_by: Mapped["User"] = relationship(back_populates="sermon")

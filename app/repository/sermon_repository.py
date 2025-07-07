@@ -29,6 +29,15 @@ class SermonRepository:
             return False
         return True
 
+    def query_sermon(self, id: int) -> Sermon | None:
+        """
+        Return a sermon with the given id.
+        """
+
+        query = self.sess.query(Sermon).filter_by(id=id).first()
+
+        return query
+
     def query_sermons(self, limit=None, offset=None) -> List[Sermon]:
         """
         Return a list of sermon objects.
@@ -42,5 +51,9 @@ class SermonRepository:
         Delete sermon with the given Id
         """
 
-        self.sess.query(Sermon).delete(id)
-        return True
+        query = self.sess.query(Sermon).filter_by(id=id).scalar()
+        if query is not None:
+            self.sess.delete(query)
+            self.sess.commit()
+            return True
+        return False

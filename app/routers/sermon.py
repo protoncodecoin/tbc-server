@@ -46,6 +46,11 @@ async def create_sermon(
     Create new sermon.
     """
 
+    audio_public_id = cloudinaryHandler.create_public_id(audio_file.filename)  # type: ignore
+    img_public_id = cloudinaryHandler.create_public_id(cover.filename)  # type: ignore
+
+    print(audio_public_id, img_public_id)
+
     # # updated_sermon.user_id = current_user.id
     is_valid_image = validate_file(
         file=cover, media_type=SupportedMediaTypePath.IMAGE.name
@@ -66,19 +71,15 @@ async def create_sermon(
         file=cover.file,
         image_name=cover.filename,  # type: ignore
         folder_name=f"sermon/images/{today.year}",
-        public_id=None,
+        public_id=img_public_id,
     )
 
     audio_res = await cloudinaryHandler.upload_audio(
         file=audio_file.file,
         audio_name=audio_file.filename,  # type: ignore
         folder_name=f"sermon/audios/{today.year}",
-        public_id=None,
+        public_id=audio_public_id,
     )
-
-    print(img_res)
-    print("\n")
-    print(audio_res)
 
     try:
         new_sermon = CreateSermon(
@@ -88,8 +89,9 @@ async def create_sermon(
             cover_image=img_res["url"],
             audio_file=audio_res["url"],
             user_id=current_user.id,
+            cld_image_public_id=img_public_id,
+            cld_audio_public_id=audio_public_id,
         )
-        print(cover.file, cover.filename)
     except ValueError as e:
 
         raise HTTPException(
@@ -105,15 +107,19 @@ async def create_sermon(
     return {"status": "successful", "message": "Sermon created successfully"}
 
 
-@router.get("/{id}/stream")
-def stream_sermon(id: int, current_user: Annotated[User, Depends(get_current_user)]):
+@router.get("/{id}/")
+def get_sermon(
+    id: int,
+    current_user: Annotated[User, Depends(get_current_user)],
+    handler: Annotated[SermonService, Depends(get_sermon_service)],
+):
     """
     Generate audio stream for user.
     """
     return {"message": "done"}
 
 
-@router.delete("/")
+@router.delete("/", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_sermon(
     id: int,
     current_user: Annotated[User, Depends(get_current_user)],
@@ -122,4 +128,10 @@ async def delete_sermon(
     """
     Delete a sermon from the database.
     """
-    return {"message": "done"}
+    q_result = handler.delete_sermon(id)
+    if not q_result:
+        raise HTTPException(
+            detail="Resource not found", status_code=status.HTTP_404_NOT_FOUND
+        )
+
+    return {"message": "Sermon deleted"}

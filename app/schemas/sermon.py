@@ -14,7 +14,9 @@ class CreateSermon(BaseModel):
     minister: str = Field(..., max_length=70)
     short_note: str = Field(..., max_length=300)
     cover_image: str
+    cld_image_public_id: Optional[str] = Field(default=None)
     audio_file: str
+    cld_audio_public_id: Optional[str] = Field(default=None)
     user_id: Optional[int] = Field(default=None)
 
     @model_validator(mode="after")
