@@ -23,6 +23,38 @@ class PodcastNotFoundException(HTTPException):
         self.headers = headers
 
 
+class UnknownException(HTTPException):
+    """
+    Handle unknown or unhandled errors.
+    """
+
+    def __init__(
+        self,
+        status_code: int,
+        detail: Any = None,
+        headers: Dict[str, str] | None = None,
+    ) -> None:
+        self.status_code = status_code
+        self.detail = detail
+        self.headers = headers
+
+
+class DatabaseException(HTTPException):
+    """
+    Handle database errors.
+    """
+
+    def __init__(
+        self,
+        status_code: int,
+        detail: Any = None,
+        headers: Dict[str, str] | None = None,
+    ) -> None:
+        self.status_code = status_code
+        self.detail = detail
+        self.headers = headers
+
+
 class UnauthoriziedUserException(HTTPException):
     """
     Handle permission errors related to the access of resources

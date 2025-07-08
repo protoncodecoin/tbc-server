@@ -1,7 +1,5 @@
 from typing import Annotated, List
-from datetime import timedelta
 
-from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse
 from sqlalchemy.orm import Session
@@ -10,7 +8,7 @@ from fastapi.security import OAuth2PasswordRequestForm
 
 from app.core.security import get_password_hash
 
-from ..dependencies import get_current_user, authenticate_user
+from ..dependencies import get_current_user
 from ..schemas.users import UserResponseSchema, UserCreateSchema
 from ..models.user import User
 from ..schemas.token import Token
@@ -33,7 +31,8 @@ async def login_for_access_token(
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
     handler: Annotated[UserService, Depends(get_user_service)],
 ) -> Token:
-    """Validates client credentials returns token if validation is successful or returns an error
+    """Validates client credentials returns token if validation is successful \
+        or returns an error
 
     Raises:
         HTTPException: Credential error

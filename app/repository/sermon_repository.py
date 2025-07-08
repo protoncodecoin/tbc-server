@@ -6,6 +6,7 @@ from fastapi import Depends
 
 from ..db.database import engine
 from ..models.sermon import Sermon
+from ..schemas.sermon import UpdateSermon
 
 
 async def get_session_db():
@@ -46,14 +47,26 @@ class SermonRepository:
         query = self.sess.query(Sermon).limit(limit).offset(offset).all()
         return query
 
-    def delete_sermon(self, id: int) -> bool:
+    def delete_sermon(self, id: int) -> bool | None:
         """
         Delete sermon with the given Id
         """
 
         query = self.sess.query(Sermon).filter_by(id=id).scalar()
-        if query is not None:
+        if query is None:
+            return None
+
+        if query:
             self.sess.delete(query)
             self.sess.commit()
             return True
+
         return False
+
+    def update_sermon(self, id: int, sermon: UpdateSermon) -> bool:
+        """
+        Update a given sermon in the db.
+        """
+        pass
+
+        return True

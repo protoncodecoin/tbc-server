@@ -43,3 +43,11 @@ class ResponseSermon(BaseModel):
     cover_image: str
     audio_file: str
     user_id: int
+
+
+class UpdateSermon(CreateSermon):
+    """
+    put update to sermon.
+    """
+
+    pass

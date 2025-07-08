@@ -7,11 +7,12 @@ from datetime import datetime
 from ..dependencies import get_current_user
 from ..services.factory import get_sermon_service
 from ..services.sermon_service import SermonService
-from ..schemas.sermon import CreateSermon
+from ..schemas.sermon import CreateSermon, UpdateSermon
 from ..models.user import User
 from ..utils.media_files_handler import validate_file
 from ..core.constants import SupportedMediaTypePath
 from cld_media.media_api import cloudinaryHandler
+from ..utils.handler_exceptions import DatabaseException, CloudinaryException
 
 router = APIRouter(prefix="/api/v1/sermon", tags=["sermon"])
 
@@ -48,8 +49,6 @@ async def create_sermon(
 
     audio_public_id = cloudinaryHandler.create_public_id(audio_file.filename)  # type: ignore
     img_public_id = cloudinaryHandler.create_public_id(cover.filename)  # type: ignore
-
-    print(audio_public_id, img_public_id)
 
     # # updated_sermon.user_id = current_user.id
     is_valid_image = validate_file(
@@ -116,10 +115,20 @@ def get_sermon(
     """
     Generate audio stream for user.
     """
-    return {"message": "done"}
+    res = handler.get_single_sermon(id)
+    if res is None:
+        raise HTTPException(
+            detail="Resource not found", status_code=status.HTTP_404_NOT_FOUND
+        )
+    if res:
+        return res
+
+    raise DatabaseException(
+        detail="An error occurred", status_code=status.HTTP_404_NOT_FOUND
+    )
 
 
-@router.delete("/", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/{id}/", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_sermon(
     id: int,
     current_user: Annotated[User, Depends(get_current_user)],
@@ -128,10 +137,107 @@ async def delete_sermon(
     """
     Delete a sermon from the database.
     """
-    q_result = handler.delete_sermon(id)
-    if not q_result:
+    # res = handler.delete_sermon(id)
+    res = handler.get_single_sermon(id)
+    if res:
+        print(res.cld_image_public_id, res.cld_audio_public_id)
+        # Delete media files from cloudinary
+        img_res = cloudinaryHandler.delete_media_file(res.cld_image_public_id)
+        audio_res = cloudinaryHandler.delete_media_file(
+            res.cld_audio_public_id, resource_type="video"
+        )
+
+        if img_res and audio_res:
+            # if img_res and audio_res:
+            return handler.delete_sermon(id)
+
+    if res is None:
         raise HTTPException(
             detail="Resource not found", status_code=status.HTTP_404_NOT_FOUND
         )
 
-    return {"message": "Sermon deleted"}
+    # handler returns false if there is a database errror
+    if not res:
+
+        raise DatabaseException(
+            detail="An error occurred", status_code=status.HTTP_404_NOT_FOUND
+        )
+
+
+@router.put("/{id}/", status_code=status.HTTP_200_OK)
+async def update(
+    id: int,
+    handler: Annotated[SermonService, Depends(get_sermon_service)],
+    current_user: Annotated[User, Depends(get_current_user)],
+    theme: str = Form(..., description="Theme for the service", max_length=250),
+    minister: str = Form(..., description="The preacher", max_length=70),
+    short_note: str = Form(
+        ...,
+        description="A brief description or information about the service",
+        max_length=200,
+    ),
+    cover: UploadFile = File(..., description="Cover image"),
+    audio_file: UploadFile = File(..., description="Audio file"),
+) -> dict[str, str]:
+    """
+    Perform a full update to resource.
+    """
+
+    res = handler.get_single_sermon(id)
+
+    if res:
+
+        audio_public_id = res.cld_audio_public_id
+        img_public_id = res.cld_image_public_id
+
+        # # updated_sermon.user_id = current_user.id
+        is_valid_image = validate_file(
+            file=cover, media_type=SupportedMediaTypePath.IMAGE.name
+        )
+        is_valid_audio = validate_file(
+            file=audio_file, media_type=SupportedMediaTypePath.AUDIO.name
+        )
+
+        if not is_valid_image or not is_valid_audio:
+            raise HTTPException(
+                detail="Please provide the valid image or audio file.",
+                status_code=status.HTTP_400_BAD_REQUEST,
+            )
+
+        today = datetime.today()
+        # upload image and audio to cloudinary
+        img_res = await cloudinaryHandler.upload_image(
+            file=cover.file,
+            image_name=cover.filename,  # type: ignore
+            folder_name=f"sermon/images/{today.year}",
+            public_id=img_public_id,
+        )
+
+        audio_res = await cloudinaryHandler.upload_audio(
+            file=audio_file.file,
+            audio_name=audio_file.filename,  # type: ignore
+            folder_name=f"sermon/audios/{today.year}",
+            public_id=audio_public_id,
+        )
+
+        try:
+            sermon_data = UpdateSermon(
+                theme=theme,
+                minister=minister,
+                short_note=short_note,
+                cover_image=img_res["url"],
+                audio_file=audio_res["url"],
+                user_id=current_user.id,
+                cld_image_public_id=img_public_id,
+                cld_audio_public_id=audio_public_id,
+            )
+        except ValueError as e:
+
+            raise HTTPException(
+                detail="Validation error occurred for request. Check if the media type provided matches the approved types.",
+                status_code=status.HTTP_400_BAD_REQUEST,
+            )
+
+        res = handler.update_sermon(id)
+
+    return {"message": "ok"}

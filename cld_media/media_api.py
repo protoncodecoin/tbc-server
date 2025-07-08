@@ -1,4 +1,6 @@
+from operator import itemgetter
 from typing import Any, BinaryIO
+
 import cloudinary.uploader
 from typing_extensions import Self
 import cloudinary
@@ -23,7 +25,7 @@ class MediaUtils(object):
         """
         Upload image files to cloudinary
         """
-        print("from api: ", public_id)
+
         response = cloudinary.uploader.upload(
             file,
             public_id=public_id,
@@ -69,7 +71,6 @@ class MediaUtils(object):
         """
         Upload audio files to cloudinary
         """
-        print("from api: ", public_id)
 
         try:
             result: dict[str, Any] = cloudinary.uploader.upload_large(
@@ -91,13 +92,32 @@ class MediaUtils(object):
 
         return result
 
-    async def delete_media_file(self, public_id: str) -> bool:
+    def delete_media_file(
+        self, public_id: str, resource_type: str | None = None
+    ) -> bool:
         """
         Delete an uploaded media file.
         """
         try:
-            await cloudinary.uploader.destroy(public_id=public_id)
+            if resource_type:
+
+                res = cloudinary.uploader.destroy(
+                    public_id=public_id, resource_type=resource_type
+                )
+
+            else:
+                res = cloudinary.uploader.destroy(public_id=public_id)
+
+            res_status = itemgetter("result")(res)
+
+            if res_status == "ok":
+                return True
+            raise CloudinaryException(
+                status_code=400, detail="Failed to delete media file"
+            )
+
         except Exception as e:
+            # print(e)
             raise CloudinaryException(
                 status_code=400, detail="Failed to delete media file"
             )
@@ -109,6 +129,24 @@ class MediaUtils(object):
         """
         new_name = filename.strip(" ").replace(" ", "_").split(".")[0]
         return new_name
+
+    def update_media_file(self, public_id: str) -> bool:
+        """
+        Update a media file.
+        """
+        pass
+
+    # async def delete_media(self, public_id: str) -> str:
+    #     """
+    #     Delete media file with given public id.
+    #     """
+    #     try:
+    #         await cloudinary.uploader
+
+    #     except Exception as e:
+    #         raise CloudinaryException(
+    #             status_code=400, detail="Failed to delete media file."
+    #         )
 
 
 # singleton to be used across the project
@@ -131,3 +169,11 @@ cloudinaryHandler = MediaUtils()
 #     "shoes", width=500, height=500, crop="auto", gravity="auto"
 # )
 # print(auto_crop_url)
+
+# import cloudinary.uploader
+
+# result = cloudinary.uploader.destroy(
+#     public_id="audio_folder/song", resource_type="video"
+# )
+
+# print(result)
