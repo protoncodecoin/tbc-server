@@ -11,7 +11,7 @@ from ..schemas.sermon import CreateSermon, UpdateSermon
 from ..models.user import User
 from ..utils.media_files_handler import validate_file
 from ..core.constants import SupportedMediaTypePath
-from cld_media.media_api import cloudinaryHandler
+from ..cld_media.media_api import cloudinaryHandler
 from ..utils.handler_exceptions import DatabaseException, CloudinaryException
 
 router = APIRouter(prefix="/api/v1/sermon", tags=["sermon"])
