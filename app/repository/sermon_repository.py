@@ -67,6 +67,21 @@ class SermonRepository:
         """
         Update a given sermon in the db.
         """
-        pass
+        query = self.sess.query(Sermon).filter_by(id=id).scalar()
+        if query is None:
+            return None
+
+        if query:
+            query.theme = sermon.theme
+            query.minister = sermon.minister
+            query.short_note = sermon.short_note
+            query.cover_image = sermon.cover_image
+            query.cld_image_public_id = sermon.cld_image_public_id
+            query.audio_file = sermon.audio_file
+            query.cld_audio_public_id = sermon.cld_audio_public_id
+
+            self.sess.add(query)
+            self.sess.commit()
+            return True
 
         return True

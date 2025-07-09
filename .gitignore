@@ -133,6 +133,7 @@ celerybeat.pid
 tbc_env/
 env/
 venv/
+tb_env/
 ENV/
 env.bak/
 venv.bak/

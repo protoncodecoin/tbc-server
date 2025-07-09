@@ -5,7 +5,6 @@ from fastapi import Depends
 
 from ..repository.sermon_repository import SermonRepository
 from ..repository.factory import get_sermon_repo
-from ..models.user import User
 from ..schemas.sermon import CreateSermon, UpdateSermon
 from ..models.sermon import Sermon
 
@@ -52,4 +51,4 @@ class SermonService:
         """
         updated_data = Sermon(**sermon.model_dump())
 
-        return self.repo.update_sermon(updated_data)
+        return self.repo.update_sermon(id, updated_data)

@@ -12,7 +12,7 @@ from ..models.user import User
 from ..utils.media_files_handler import validate_file
 from ..core.constants import SupportedMediaTypePath
 from ..cld_media.media_api import cloudinaryHandler
-from ..utils.handler_exceptions import DatabaseException, CloudinaryException
+from ..utils.handler_exceptions import DatabaseException
 
 router = APIRouter(prefix="/api/v1/sermon", tags=["sermon"])
 
@@ -238,6 +238,10 @@ async def update(
                 status_code=status.HTTP_400_BAD_REQUEST,
             )
 
-        res = handler.update_sermon(id)
+        res = handler.update_sermon(id, sermon_data)
+        return {"message": "ok"}
 
-    return {"message": "ok"}
+    raise HTTPException(
+        detail="Resource not found",
+        status_code=status.HTTP_400_BAD_REQUEST,
+    )
