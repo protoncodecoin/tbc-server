@@ -12,6 +12,8 @@ class CreatePodcast(BaseModel):
     user_id: Optional[int] = None
     cover_image: str
     cld_image_public_id: str
+    cld_video_public_id: str
+    video_file: str
 
 
 class PodcastResponse(CreatePodcast):

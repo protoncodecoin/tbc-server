@@ -51,7 +51,7 @@ class MediaUtils(object):
 
         response: dict[str, Any] = cloudinary.uploader.upload_large(
             file,
-            resource_type="video",
+            resource_type="auto",
             public_id=public_id,
             chunk_size=6_000_000,
             eager_async=True,

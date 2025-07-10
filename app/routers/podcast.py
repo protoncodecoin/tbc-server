@@ -2,8 +2,9 @@
 Routers for Podcast.
 """
 
+from datetime import datetime
 from typing import Annotated, Optional
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Form, UploadFile, File
 
 
 from ..dependencies import get_current_user
@@ -17,6 +18,10 @@ from ..models.user import User
 from ..services.podcast_service import PodcastService
 from ..services.factory import get_podcast_service
 from ..utils.handler_exceptions import PodcastNotFoundException
+from ..cld_media.media_api import cloudinaryHandler
+from ..utils.media_files_handler import validate_file
+from ..core.constants import SupportedMediaTypePath
+
 
 router = APIRouter(tags=["podcast"], prefix="/api/v1/podcasts")
 
@@ -54,13 +59,66 @@ async def get_podcast(
 
 @router.post("/", status_code=status.HTTP_200_OK)
 async def create_podcast(
-    podcast_data: CreatePodcast,
+    # podcast_data: CreatePodcast,
     handler: Annotated[PodcastService, Depends(get_podcast_service)],
     current_user: Annotated[User, Depends(get_current_user)],
+    title: str = Form(..., description="Title of the podcast"),
+    running_episodes: int = Form(..., description="Episode number"),
+    cover_image: UploadFile = File(..., description="Feature Image"),
+    video_file: UploadFile = File(..., description="Video file"),
 ):
+    """
+    Create podcast file.
+    """
+    img_public_id = cloudinaryHandler.create_public_id(cover_image.filename)
+    video_public_id = cloudinaryHandler.create_public_id(video_file.filename)
 
-    podcast_data.user_id = current_user.id
-    result = handler.insert_podcast(podcast_data)
+    is_valid_image = validate_file(
+        file=cover_image, media_type=SupportedMediaTypePath.IMAGE.name
+    )
+    is_valid_video = validate_file(
+        file=video_file, media_type=SupportedMediaTypePath.VIDEO.name
+    )
+
+    if not is_valid_image or not is_valid_video:
+        raise HTTPException(
+            detail="Please provide the valid image or audio file.",
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+    today = datetime.today()
+
+    img_res = await cloudinaryHandler.upload_image(
+        file=cover_image.file,
+        image_name=cover_image.filename,
+        folder_name=f"podcast/images/{today.year}",
+        public_id=img_public_id,
+    )
+
+    video_res = await cloudinaryHandler.upload_video(
+        file=video_file.file,
+        video_name=video_file.filename,
+        folder_name=f"podcast/videos/{today.year}",
+        public_id=video_public_id,
+    )
+
+    try:
+        new_podcast = CreatePodcast(
+            title=title,
+            running_episodes=running_episodes,
+            user_id=current_user.id,
+            cover_image=img_res["url"],
+            cld_image_public_id=img_public_id,
+            cld_video_public_id=video_public_id,
+            video_file=video_res["url"],
+        )
+    except ValueError as e:
+        raise HTTPException(
+            detail="Validation error occurred for request. Check if the media type provided matches the approved types.",
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+    result = handler.insert_podcast(new_podcast)
     if result is False:
         raise HTTPException(
             detail="Failed to create Podcast", status_code=status.HTTP_400_BAD_REQUEST
