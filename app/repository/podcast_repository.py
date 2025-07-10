@@ -36,11 +36,11 @@ class PodcastRepository:
             return False
         return True
 
-    def query_podcast(self) -> List[Podcast]:
+    def query_podcast(self, limit: int, offset: int) -> List[Podcast]:
         """
         Returns a list of Podcast objects.
         """
-        query = self.sess.query(Podcast).all()
+        query = self.sess.query(Podcast).limit(limit).offset(offset).all()
         return query
 
     def query_by_id(self, id: int) -> Podcast | None:

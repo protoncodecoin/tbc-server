@@ -10,6 +10,8 @@ class CreatePodcast(BaseModel):
     title: str = Field(..., description="Title of the Podcast Content you are creating")
     running_episodes: int = Field(..., ge=1)
     user_id: Optional[int] = None
+    cover_image: str
+    cld_image_public_id: str
 
 
 class PodcastResponse(CreatePodcast):

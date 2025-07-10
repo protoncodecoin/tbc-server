@@ -2,7 +2,7 @@
 Routers for Podcast.
 """
 
-from typing import Annotated
+from typing import Annotated, Optional
 from fastapi import APIRouter, Depends, HTTPException, status
 
 
@@ -24,6 +24,8 @@ router = APIRouter(tags=["podcast"], prefix="/api/v1/podcasts")
 @router.get("/")
 async def get_all_podcasts(
     handler: Annotated[PodcastService, Depends(get_podcast_service)],
+    limit: Optional[int] = 5,
+    offset: Optional[int] = 0,
 ):
     """Return all podcast.
 
@@ -33,7 +35,7 @@ async def get_all_podcasts(
     Returns:
         Podcast: List of podcast objects
     """
-    return handler.get_all_podcasts()
+    return handler.get_all_podcasts(limit=limit, offset=offset)
 
 
 @router.get("/{id}")
@@ -59,7 +61,7 @@ async def create_podcast(
 
     podcast_data.user_id = current_user.id
     result = handler.insert_podcast(podcast_data)
-    if result == False:
+    if result is False:
         raise HTTPException(
             detail="Failed to create Podcast", status_code=status.HTTP_400_BAD_REQUEST
         )

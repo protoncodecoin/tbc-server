@@ -28,11 +28,11 @@ class PodcastService:
 
         return self.repo.insert_podcast(new_podcast)
 
-    def get_all_podcasts(self) -> List[Podcast]:
+    def get_all_podcasts(self, limit: int, offset: int) -> List[Podcast]:
         """
         List all podcast items in the database.
         """
-        return self.repo.query_podcast()
+        return self.repo.query_podcast(limit=limit, offset=offset)
 
     def get_podcast(self, id: int) -> Podcast | None:
         """
@@ -92,7 +92,7 @@ class PodcastService:
         if podcast_obj:
             if podcast_obj.user_id == user.id:
                 transaction_result = self.repo.delete_podcast(id)
-                True if transaction_result else False
+                return True if transaction_result else False
             raise UnauthoriziedUserException(
                 status_code=status.HTTP_401_UNAUTHORIZED, detail="Permission denied"
             )

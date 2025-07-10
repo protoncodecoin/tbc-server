@@ -24,7 +24,9 @@ class Podcast(Base):
         DateTime(timezone=True), server_default=func.now()
     )
     cover_image: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    cld_image_public_id: Mapped[Optional[str]] = mapped_column(String)
     video_file: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    cld_video_public_id: Mapped[Optional[str]] = mapped_column(String)
 
     user_id = mapped_column(ForeignKey("user_account.id"))
     creator: Mapped["User"] = relationship(back_populates="podcasts")
