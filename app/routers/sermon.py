@@ -13,12 +13,14 @@ from ..utils.media_files_handler import validate_file
 from ..core.constants import SupportedMediaTypePath
 from ..cld_media.media_api import cloudinaryHandler
 from ..utils.handler_exceptions import DatabaseException
+from ..utils.validators import validate_sermon_partial_data
 
 router = APIRouter(prefix="/api/v1/sermon", tags=["sermon"])
 
 
 @router.get("/")
 async def get_sermons(
+    current_user: Annotated[User, Depends(get_current_user)],
     handler: Annotated[SermonService, Depends(get_sermon_service)],
     limit: Optional[int] = 5,
     offset: Optional[int] = 0,
@@ -245,3 +247,29 @@ async def update(
         detail="Resource not found",
         status_code=status.HTTP_400_BAD_REQUEST,
     )
+
+
+# @router.patch("/{id}/")
+# async def partial_update(
+#     id: int,
+#     handler: Annotated[
+#         SermonService,
+#         Depends(get_sermon_service),
+#     ],
+#     cover: UploadFile = File(description="Cover image", default=None),
+#     # validate_data=Depends(validate_sermon_partial_data),
+# ):
+#     """
+#     Partial update to sermon.
+#     """
+#     print(cover)
+#     res = handler.get_sermons(id)
+
+#     if res:
+
+#         return {"msg": "ok"}
+
+#     raise HTTPException(
+#         detail="Resource not found",
+#         status_code=status.HTTP_400_BAD_REQUEST,
+#     )
