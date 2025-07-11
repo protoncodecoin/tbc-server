@@ -12,7 +12,10 @@ from ..models.user import User
 from ..utils.media_files_handler import validate_file
 from ..core.constants import SupportedMediaTypePath
 from ..cld_media.media_api import cloudinaryHandler
-from ..utils.handler_exceptions import DatabaseException
+from ..utils.handler_exceptions import (
+    DatabaseException,
+    UnauthoriziedUserException,
+)
 from ..utils.validators import validate_sermon_partial_data
 
 router = APIRouter(prefix="/api/v1/sermon", tags=["sermon"])
@@ -189,59 +192,76 @@ async def update(
 
     if res:
 
-        audio_public_id = res.cld_audio_public_id
-        img_public_id = res.cld_image_public_id
+        if res.user_id == current_user.id:
 
-        # # updated_sermon.user_id = current_user.id
-        is_valid_image = validate_file(
-            file=cover, media_type=SupportedMediaTypePath.IMAGE.name
-        )
-        is_valid_audio = validate_file(
-            file=audio_file, media_type=SupportedMediaTypePath.AUDIO.name
-        )
+            audio_public_id = cloudinaryHandler.create_public_id(audio_file.filename)
+            img_public_id = cloudinaryHandler.create_public_id(cover.filename)
 
-        if not is_valid_image or not is_valid_audio:
-            raise HTTPException(
-                detail="Please provide the valid image or audio file.",
-                status_code=status.HTTP_400_BAD_REQUEST,
+            # # updated_sermon.user_id = current_user.id
+            today = datetime.today()
+            is_valid_image = validate_file(
+                file=cover, media_type=SupportedMediaTypePath.IMAGE.name
+            )
+            is_valid_audio = validate_file(
+                file=audio_file, media_type=SupportedMediaTypePath.AUDIO.name
             )
 
-        today = datetime.today()
-        # upload image and audio to cloudinary
-        img_res = await cloudinaryHandler.upload_image(
-            file=cover.file,
-            image_name=cover.filename,  # type: ignore
-            folder_name=f"sermon/images/{today.year}",
-            public_id=img_public_id,
-        )
+            if not is_valid_image or not is_valid_audio:
+                raise HTTPException(
+                    detail="Please provide the valid image or audio file.",
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                )
 
-        audio_res = await cloudinaryHandler.upload_audio(
-            file=audio_file.file,
-            audio_name=audio_file.filename,  # type: ignore
-            folder_name=f"sermon/audios/{today.year}",
-            public_id=audio_public_id,
-        )
+            if res.cld_image_public_id != img_public_id:
+                cloudinaryHandler.delete_media_file(
+                    public_id=res.cld_image_public_id, resource_type="image"
+                )
 
-        try:
-            sermon_data = UpdateSermon(
-                theme=theme,
-                minister=minister,
-                short_note=short_note,
-                cover_image=img_res["url"],
-                audio_file=audio_res["url"],
-                user_id=current_user.id,
-                cld_image_public_id=img_public_id,
-                cld_audio_public_id=audio_public_id,
-            )
-        except ValueError as e:
+            if res.cld_audio_public_id != audio_public_id:
+                cloudinaryHandler.delete_media_file(
+                    public_id=res.cld_audio_public_id,
+                    resource_type="video",
+                )
 
-            raise HTTPException(
-                detail="Validation error occurred for request. Check if the media type provided matches the approved types.",
-                status_code=status.HTTP_400_BAD_REQUEST,
+            # upload image and audio to cloudinary
+            img_res = await cloudinaryHandler.upload_image(
+                file=cover.file,
+                image_name=cover.filename,  # type: ignore
+                folder_name=f"sermon/images/{today.year}",
+                public_id=img_public_id,
             )
 
-        res = handler.update_sermon(id, sermon_data)
-        return {"message": "ok"}
+            audio_res = await cloudinaryHandler.upload_audio(
+                file=audio_file.file,
+                audio_name=audio_file.filename,  # type: ignore
+                folder_name=f"sermon/audios/{today.year}",
+                public_id=audio_public_id,
+            )
+
+            try:
+                sermon_data = UpdateSermon(
+                    theme=theme,
+                    minister=minister,
+                    short_note=short_note,
+                    cover_image=img_res["url"],
+                    audio_file=audio_res["url"],
+                    user_id=current_user.id,
+                    cld_image_public_id=img_public_id,
+                    cld_audio_public_id=audio_public_id,
+                )
+            except ValueError as e:
+
+                raise HTTPException(
+                    detail="Validation error occurred for request. Check if the media type provided matches the approved types.",
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                )
+
+            res = handler.update_sermon(id, sermon_data)
+            return {"message": "ok"}
+
+        raise UnauthoriziedUserException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Permission Denied"
+        )
 
     raise HTTPException(
         detail="Resource not found",

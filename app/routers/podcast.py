@@ -165,22 +165,22 @@ async def update_podcast(
         if res_query.user_id == current_user.id:
 
             today = datetime.today()
-            # if res_query.cld_image_public_id != img_public_id:
-            #     # Delete image from cloudinary
-            #     cloudinaryHandler.delete_media_file(
-            #         public_id=res_query.cld_image_public_id,
-            #         resource_type="image",
-            #         folder=f"podcast/images/{today.year}",
-            #     )
+            if res_query.cld_image_public_id != img_public_id:
+                # Delete image from cloudinary
+                cloudinaryHandler.delete_media_file(
+                    public_id=res_query.cld_image_public_id,
+                    resource_type="image",
+                    # folder=f"podcast/images/{today.year}",
+                )
 
-            # if res_query.cld_video_public_id != video_public_id:
-            #     # Delete video from cloudinary
+            if res_query.cld_video_public_id != video_public_id:
+                # Delete video from cloudinary
 
-            #     cloudinaryHandler.delete_media_file(
-            #         public_id=res_query.cld_video_public_id,
-            #         resource_type="video",
-            #         folder=f"podcast/videos/{today.year}",
-            #     )
+                cloudinaryHandler.delete_media_file(
+                    public_id=res_query.cld_video_public_id,
+                    resource_type="video",
+                    # folder=f"podcast/videos/{today.year}",
+                )
 
             img_res = await cloudinaryHandler.upload_image(
                 file=cover_image.file,
