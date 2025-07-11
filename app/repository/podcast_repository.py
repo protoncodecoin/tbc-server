@@ -50,14 +50,24 @@ class PodcastRepository:
         query = self.sess.query(Podcast).filter_by(id=id).scalar()
         return query
 
-    def update_podcast(self, data: Podcast) -> bool:
+    def update_podcast(self, id: int, data: Podcast) -> bool:
         """
         Update a Podcast object.
         """
+        query = self.sess.query(Podcast).filter_by(id=id).scalar()
+        if query is not None:
+            query.title = data.title
+            query.running_episodes = data.running_episodes
+            query.user_id = data.user_id
+            query.cover_image = data.cover_image
+            query.cld_image_public_id = data.cld_image_public_id
+            query.cld_video_public_id = data.cld_video_public_id
+            query.video_file = data.video_file
 
-        self.sess.add(data)
-        self.sess.commit()
-        return True
+            self.sess.add(query)
+            self.sess.commit()
+            return True
+        return False
 
     def delete_podcast(self, id: int) -> bool:
         query = self.sess.query(Podcast).filter_by(id=id).scalar()

@@ -84,4 +84,4 @@ class SermonRepository:
             self.sess.commit()
             return True
 
-        return True
+        return False

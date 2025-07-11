@@ -22,13 +22,13 @@ def save_file(file: UploadFile, subdir: str) -> str | None:
         file_ext = file.filename.split(".")[-1]  # type: ignore
 
         if subdir == SupportedMediaTypePath.AUDIO.name:
-            if not file_ext in AUDIO_FILE_TYPES:
+            if file_ext not in AUDIO_FILE_TYPES:
                 raise ValueError("File extension not supported")
         if subdir == SupportedMediaTypePath.IMAGE.name:
-            if not file_ext in IMAGE_FILE_TYPES:
+            if file_ext not in IMAGE_FILE_TYPES:
                 raise ValueError("File extension not supported")
         if subdir == SupportedMediaTypePath.VIDEO.name:
-            if not file_ext in VIDEO_FILE_TYPES:
+            if file_ext not in VIDEO_FILE_TYPES:
                 raise ValueError("File extension not supported")
 
         file.filename = (

@@ -44,59 +44,36 @@ class PodcastService:
         """
         Update a particular podcast with the given id.
         """
-        podcast_obj = self.repo.query_by_id(id)
-        if podcast_obj is not None:
+        podcast_obj = Podcast(**podcast.model_dump())
+        return self.repo.update_podcast(id, podcast_obj)
 
-            if podcast_obj.user_id == user.id:
-                podcast_obj.title = podcast.title
-                podcast_obj.running_episodes = podcast.running_episodes
-                return self.repo.update_podcast(podcast_obj)
+    # def partial_update_podcast(
+    #     self, id: int, body: PartialUpdatePodcast, user: User
+    # ) -> bool:
+    #     podcast_obj = self.repo.query_by_id(id)
+    #     if podcast_obj is not None:
+    #         if podcast_obj.user_id == user.id:
 
-            raise UnauthoriziedUserException(
-                status_code=status.HTTP_401_UNAUTHORIZED, detail="Permission Denied"
-            )
+    #             title = getattr(body, "title", None)
+    #             running_episodes = getattr(body, "running_episodes", None)
 
-        raise PodcastNotFoundException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Podcast Resource not found"
-        )
+    #             if title is not None:
+    #                 podcast_obj.title = title
+    #             if running_episodes is not None:
+    #                 podcast_obj.running_episodes = running_episodes
 
-    def partial_update_podcast(
-        self, id: int, body: PartialUpdatePodcast, user: User
-    ) -> bool:
-        podcast_obj = self.repo.query_by_id(id)
-        if podcast_obj is not None:
-            if podcast_obj.user_id == user.id:
+    #             return self.repo.update_podcast(podcast_obj)
 
-                title = getattr(body, "title", None)
-                running_episodes = getattr(body, "running_episodes", None)
-
-                if title is not None:
-                    podcast_obj.title = title
-                if running_episodes is not None:
-                    podcast_obj.running_episodes = running_episodes
-
-                return self.repo.update_podcast(podcast_obj)
-
-            raise UnauthoriziedUserException(
-                status_code=status.HTTP_401_UNAUTHORIZED, detail="Permission Denied"
-            )
-        raise PodcastNotFoundException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Podcast Resource not found"
-        )
+    #         raise UnauthoriziedUserException(
+    #             status_code=status.HTTP_401_UNAUTHORIZED, detail="Permission Denied"
+    #         )
+    #     raise PodcastNotFoundException(
+    #         status_code=status.HTTP_404_NOT_FOUND, detail="Podcast Resource not found"
+    #     )
 
     def delete_podcast(self, id: int, user: User) -> bool:
         """
         Delete a podcast by ID
         """
-        podcast_obj = self.repo.query_by_id(id)
-        if podcast_obj:
-            if podcast_obj.user_id == user.id:
-                transaction_result = self.repo.delete_podcast(id)
-                return True if transaction_result else False
-            raise UnauthoriziedUserException(
-                status_code=status.HTTP_401_UNAUTHORIZED, detail="Permission denied"
-            )
 
-        raise PodcastNotFoundException(
-            detail="Podcast Resource not Found", status_code=status.HTTP_404_NOT_FOUND
-        )
+        return self.repo.delete_podcast(id)

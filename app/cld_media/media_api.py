@@ -93,22 +93,36 @@ class MediaUtils(object):
         return result
 
     def delete_media_file(
-        self, public_id: str, resource_type: str | None = None
+        self,
+        public_id: str,
+        folder: str,
+        resource_type: str | None = None,
     ) -> bool:
         """
         Delete an uploaded media file.
         """
+        print(f"{folder}/{public_id}")
         try:
             if resource_type:
 
                 res = cloudinary.uploader.destroy(
-                    public_id=public_id, resource_type=resource_type
+                    public_id=f"{folder}/{public_id}",
+                    resource_type=resource_type,
+                    # folder=folder,
+                    # type="authenticated",
                 )
 
             else:
-                res = cloudinary.uploader.destroy(public_id=public_id)
+                res = cloudinary.uploader.destroy(
+                    public_id=f"{folder}/{public_id}",
+                    # folder=folder,
+                    # type="authenticated",
+                    resource_type=resource_type,
+                )
 
             res_status = itemgetter("result")(res)
+
+            print(res_status, res)
 
             if res_status == "ok":
                 return True
