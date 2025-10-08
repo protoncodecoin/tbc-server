@@ -6,7 +6,7 @@ class Settings(BaseSettings):
     CLOUD_NAME: str
     API_KEY: str
     API_SECRET: str
-    SQL_ALCHEMY_URL: str
+    # SQL_ALCHEMY_URL: str
 
     class Config:
         env_file = ".env"

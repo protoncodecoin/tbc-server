@@ -32,6 +32,8 @@ class User(Base):
     )
     is_active: Mapped[bool] = mapped_column(default=False)
     is_admin: Mapped[bool] = mapped_column(default=False)
+
+    # relationships
     podcasts: Mapped[List["Podcast"]] = relationship(
         back_populates="creator",
         cascade="all, delete-orphan",
